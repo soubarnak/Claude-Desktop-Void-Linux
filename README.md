@@ -12,6 +12,15 @@
   A <a href="https://bongbetic.com">Bongbetic</a> open-source project.
 </p>
 
+<p align="center">
+  <a href="https://github.com/soubarnak/Claude-Desktop-Void-Linux/actions/workflows/upstream-check.yml"><img alt="Upstream check" src="https://github.com/soubarnak/Claude-Desktop-Void-Linux/actions/workflows/upstream-check.yml/badge.svg"></a>
+  <a href="https://github.com/soubarnak/Claude-Desktop-Void-Linux/actions/workflows/upstream-check.yml"><img alt="Tested with Claude Desktop" src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsoubarnak%2FClaude-Desktop-Void-Linux%2Fmain%2F.github%2Fbadges%2Fclaude-desktop.json"></a>
+  <a href="https://github.com/soubarnak/Claude-Desktop-Void-Linux/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/soubarnak/Claude-Desktop-Void-Linux"></a>
+  <img alt="Platform" src="https://img.shields.io/badge/Void_Linux-x86__64_glibc-478061">
+  <img alt="Cowork" src="https://img.shields.io/badge/Cowork-supported-brightgreen">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+</p>
+
 ---
 
 ## What this repository does

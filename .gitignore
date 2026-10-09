@@ -21,3 +21,6 @@ update.conf
 *.pem
 *.key
 __pycache__/
+
+# Launch post drafts (private)
+drafts/

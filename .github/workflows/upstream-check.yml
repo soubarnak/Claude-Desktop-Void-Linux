@@ -1,0 +1,98 @@
+name: Upstream check
+
+# Daily: build the newest Claude Desktop from Anthropic's APT repository in a
+# Void Linux container and check the package. Nothing is published; the
+# Anthropic binaries never leave the runner.
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "*.sh"
+      - "keys/**"
+      - "tests/**"
+      - ".github/workflows/upstream-check.yml"
+  pull_request:
+    paths:
+      - "*.sh"
+      - "keys/**"
+      - "tests/**"
+      - ".github/workflows/upstream-check.yml"
+
+concurrency:
+  group: upstream-check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and check in Void Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container: ghcr.io/void-linux/void-glibc-full:latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Install build tools
+        shell: sh
+        run: |
+          xbps-install -Syu xbps
+          xbps-install -yu
+          xbps-install -y bash git curl gnupg binutils xz zstd python3
+      - uses: actions/checkout@v4
+      - name: Build newest upstream release and check package
+        id: check
+        run: tests/ci.sh
+
+  badge:
+    name: Update tested-version badge
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write badge data
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          printf '{"schemaVersion":1,"label":"tested with Claude Desktop","message":"%s","color":"brightgreen"}\n' \
+            "$VERSION" > .github/badges/claude-desktop.json
+          if git diff --quiet; then
+            echo "Badge already shows $VERSION"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: tested with Claude Desktop $VERSION"
+          git push
+
+  report:
+    name: Open issue on failure
+    needs: build
+    if: failure() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create upstream-check --color B60205 \
+            --description "Daily upstream build check failed" --force
+          number=$(gh issue list --label upstream-check --state open --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "Still failing: $RUN_URL"
+          else
+            gh issue create --label upstream-check \
+              --title "Upstream check failed" \
+              --body "The daily build of the newest Claude Desktop release failed. A new upstream release may have changed the package layout, dependencies, or Cowork paths. Run: $RUN_URL"
+          fi

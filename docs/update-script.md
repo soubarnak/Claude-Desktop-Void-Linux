@@ -150,3 +150,33 @@ REVISION=2 ./build-xbps.sh DEB      # bump the XBPS revision
 It reads the version from the `.deb`, builds
 `claude-desktop-<version>_<revision>.x86_64.xbps` in `repo/`, and updates the
 index. See [packaging.md](packaging.md).
+
+## Continuous checks
+
+`.github/workflows/upstream-check.yml` runs every day, on pushes that touch
+the scripts, and on demand. Inside a `ghcr.io/void-linux/void-glibc-full`
+container it runs `tests/ci.sh`, which:
+
+1. runs `update.sh --no-install` against Anthropic's repository;
+2. runs `tests/check-package.py`, which fails if any upstream file differs,
+   `chrome-sandbox` is not `4755`, a Void addition is missing, or `app.asar`
+   no longer mentions the Cowork paths the package relies on;
+3. checks that every dependency resolves from the official Void repositories.
+
+On success, the "tested with Claude Desktop" badge is updated. On failure,
+an issue labelled `upstream-check` is opened. The built package never leaves
+the CI runner.
+
+Run the same check locally with rootless podman from a clean checkout:
+
+```sh
+podman run --rm -v "$PWD":/work:Z ghcr.io/void-linux/void-glibc-full:latest \
+  sh -c '/work/tests/ci-setup.sh && /work/tests/ci.sh'
+```
+
+Or check a package you built yourself:
+
+```sh
+python3 tests/check-package.py downloads/claude-desktop_<version>_amd64.deb \
+  repo/claude-desktop-<version>_1.x86_64.xbps
+```

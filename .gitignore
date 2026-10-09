@@ -1,0 +1,23 @@
+# Local notes for Claude Code (private)
+CLAUDE.md
+.claude/
+
+# Build outputs and downloads: Anthropic's binaries are never committed
+repo/
+downloads/
+build/
+.build.*/
+*.deb
+*.xbps
+*-repodata
+SHA256SUMS
+
+# Per-machine settings
+update.conf
+
+# Secrets and caches
+.env
+.env.*
+*.pem
+*.key
+__pycache__/

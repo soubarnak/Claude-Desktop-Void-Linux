@@ -73,6 +73,29 @@ ask() {  # ask PROMPT -> REPLY
 }
 confirm() { ask "$1 [y/N] "; [[ $REPLY =~ ^[Yy] ]]; }
 
+# Privilege escalation for the few steps that need root.
+# CLAUDE_VOID_SU picks the tool explicitly (sudo, doas, or any compatible wrapper).
+# Otherwise sudo is preferred, then doas; running as root needs neither.
+# Resolved lazily, so --no-install works with neither installed.
+su_cmd=()
+as_root() {
+  if [ ${#su_cmd[@]} -eq 0 ]; then
+    if [ "$(id -u)" -eq 0 ]; then
+      su_cmd=(env)
+    elif [ -n "${CLAUDE_VOID_SU:-}" ]; then
+      command -v "$CLAUDE_VOID_SU" >/dev/null || die "CLAUDE_VOID_SU=$CLAUDE_VOID_SU not found"
+      su_cmd=("$CLAUDE_VOID_SU")
+    elif command -v sudo >/dev/null; then
+      su_cmd=(sudo)
+    elif command -v doas >/dev/null; then
+      su_cmd=(doas)
+    else
+      die "need root: install sudo or doas, set CLAUDE_VOID_SU, or run as root"
+    fi
+  fi
+  "${su_cmd[@]}" "$@"
+}
+
 if [ "$link_command" = 1 ]; then
   mkdir -p "$HOME/.local/bin"
   ln -sfn "$here/update.sh" "$HOME/.local/bin/claude-desktop-update"
@@ -106,7 +129,7 @@ missing=''
 for tool in curl gpg sha256sum ar tar xz zstd xbps-query xbps-rindex xbps-create; do
   command -v "$tool" >/dev/null || missing+=" $tool"
 done
-[ -z "$missing" ] || die "missing tools:$missing (install: sudo xbps-install -S curl gnupg binutils xz zstd)"
+[ -z "$missing" ] || die "missing tools:$missing (install as root: xbps-install -S curl gnupg binutils xz zstd)"
 tmp=$(mktemp -d)
 trap 'rm -rf -- "$tmp"' EXIT
 mkdir -p "$downloads" "$repo"
@@ -264,13 +287,13 @@ done
 
 if ! grep -qsx "repository=$repo" "$xbps_conf"; then
   info "Registering $repo in $xbps_conf"
-  printf 'repository=%s\n' "$repo" | sudo tee "$xbps_conf" >/dev/null
+  printf 'repository=%s\n' "$repo" | as_root tee "$xbps_conf" >/dev/null
 fi
 before=$(xbps-query -p pkgver claude-desktop 2>/dev/null || true)
 if [ -n "$before" ]; then
-  sudo xbps-install -Su $yes claude-desktop
+  as_root xbps-install -Su $yes claude-desktop
 else
-  sudo xbps-install -S $yes claude-desktop
+  as_root xbps-install -S $yes claude-desktop
 fi
 after=$(xbps-query -p pkgver claude-desktop 2>/dev/null || true)
 info "Installed: ${after:-none} (was: ${before:-none})"

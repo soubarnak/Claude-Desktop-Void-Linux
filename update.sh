@@ -34,6 +34,9 @@ key="$here/keys/claude-desktop-archive-keyring.asc"
 fingerprint=31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
 xbps_conf=/etc/xbps.d/30-claude-desktop.conf
 arch=amd64
+# Packaging revision: bump when the XBPS packaging changes for the same
+# upstream version, so installed systems upgrade (kept in step with build-xbps.sh).
+export REVISION=${REVISION:-2}
 
 APT_BASE=https://downloads.claude.ai/claude-desktop/apt/stable
 APT_SUITE=stable
@@ -123,9 +126,9 @@ deb_version() {  # deb_version FILE: print the Debian control Version
     | sed -n 's/^Version: //p'
 }
 
-repo_has() {  # repo_has VERSION: true when the local repo indexes it
+repo_has() {  # repo_has VERSION: true when the local repo indexes it at REVISION
   xbps-query -i --repository="$repo" -R -p pkgver claude-desktop 2>/dev/null \
-    | grep -qx "claude-desktop-${1}_[0-9]*"
+    | grep -qx "claude-desktop-${1}_${REVISION}"
 }
 
 use_local() {  # use_local FILE
@@ -274,6 +277,23 @@ else
 fi
 after=$(xbps-query -p pkgver claude-desktop 2>/dev/null || true)
 info "Installed: ${after:-none} (was: ${before:-none})"
+[ -n "$after" ] || die "claude-desktop is not installed"
+
+# Make sure the launcher entry and the Claude logo resolve.
+entry=/usr/share/applications/com.anthropic.Claude.desktop
+icon=/usr/share/icons/hicolor/256x256/apps/claude-desktop.png
+[ -f "$entry" ] || warn "launcher entry missing: $entry"
+if [ -f "$icon" ]; then
+  info "App icon: $icon"
+else
+  warn "Claude icon missing: $icon (run: sudo xbps-pkgdb claude-desktop)"
+fi
+# Claude writes its own copy of the entry to ~/.local/share/applications;
+# refresh the user caches so launchers pick up the icon without a relogin.
+user_apps=${XDG_DATA_HOME:-$HOME/.local/share}/applications
+if [ -d "$user_apps" ] && command -v update-desktop-database >/dev/null; then
+  update-desktop-database "$user_apps" 2>/dev/null || true
+fi
 if [ "$before" != "$after" ] && pgrep -f '^/usr/lib/claude-desktop/claude-desktop' >/dev/null; then
   info "Claude Desktop is running the old version; quit and reopen it."
 fi

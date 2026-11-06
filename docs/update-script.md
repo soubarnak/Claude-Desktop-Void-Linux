@@ -144,7 +144,7 @@ normal `sudo xbps-install -Syu`. The log is in
 
 ```sh
 ./build-xbps.sh DEB [EXPECTED_SHA256]
-REVISION=2 ./build-xbps.sh DEB      # bump the XBPS revision
+REVISION=3 ./build-xbps.sh DEB      # bump the XBPS revision
 ```
 
 It reads the version from the `.deb`, builds

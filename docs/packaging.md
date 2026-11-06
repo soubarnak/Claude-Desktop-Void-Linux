@@ -34,6 +34,11 @@ Ubuntu AppArmor profile). Their other tasks become package-owned files:
 Additions for Void:
 
 - License file at `/usr/share/licenses/claude-desktop/copyright`.
+- Claude logo in every place launchers and docks look: the upstream hicolor
+  `claude-desktop` PNGs, plus the 512 px `resources/icon.png` as
+  `hicolor/512x512` and `/usr/share/pixmaps/claude-desktop.png`, and
+  `com.anthropic.Claude` aliases (the window app_id) for docks that look up
+  icons by app_id. The build fails if the package has no Claude icon.
 - Cowork firmware links and `vhost_vsock` boot configuration. See
   [cowork.md](cowork.md).
 
@@ -60,10 +65,12 @@ Optional, not required: `gnome-keyring` (secret storage) and
 
 ## Revisions
 
-The XBPS revision starts at `1` for each upstream version. To publish a
-packaging-only change for the same upstream version, rebuild with a higher
-revision so `xbps-install -u` sees it as newer:
+The packaging revision is set by the default `REVISION` in `update.sh` and
+`build-xbps.sh` (currently `2`). Bump both defaults when the packaging changes
+for the same upstream version. `update.sh` then rebuilds, because it checks
+for the exact `<version>_<revision>`, and `xbps-install -u` sees the package
+as newer. A one-off rebuild:
 
 ```sh
-REVISION=2 ./build-xbps.sh downloads/claude-desktop_<version>_amd64.deb
+REVISION=3 ./build-xbps.sh downloads/claude-desktop_<version>_amd64.deb
 ```

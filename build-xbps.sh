@@ -2,14 +2,14 @@
 # Repackage an upstream Claude Desktop Debian binary release for Void x86_64 glibc.
 # Usage: build-xbps.sh DEB [EXPECTED_SHA256]
 # The version comes from the Debian control file. REVISION overrides the
-# XBPS revision (default 1).
+# XBPS revision (default 2).
 set -euo pipefail
 umask 022
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 deb=${1:?usage: build-xbps.sh DEB [EXPECTED_SHA256]}
 expected=${2:-}
-revision=${REVISION:-1}
+revision=${REVISION:-2}
 
 for tool in ar tar xz zstd sha256sum xbps-create xbps-rindex; do
   command -v "$tool" >/dev/null || { printf 'Missing tool: %s\n' "$tool" >&2; exit 1; }
@@ -57,6 +57,22 @@ fi
 if [ -x "$app/resources/bin/ccd" ]; then
   ln -s ../lib/claude-desktop/resources/bin/ccd "$tmp/stage/usr/bin/ccd"
 fi
+# App icon: keep the Claude logo wherever launchers and docks look for it.
+# Upstream ships hicolor PNGs named claude-desktop (the .desktop Icon=) and a
+# 512 px logo in resources/icon.png. Add the 512 px size, a pixmaps fallback,
+# and com.anthropic.Claude aliases for docks that resolve icons by app_id.
+hicolor="$tmp/stage/usr/share/icons/hicolor"
+if [ -f "$app/resources/icon.png" ]; then
+  [ -f "$hicolor/512x512/apps/claude-desktop.png" ] \
+    || install -Dm644 "$app/resources/icon.png" "$hicolor/512x512/apps/claude-desktop.png"
+  install -Dm644 "$app/resources/icon.png" "$tmp/stage/usr/share/pixmaps/claude-desktop.png"
+fi
+icons=$(find "$hicolor" -path '*/apps/claude-desktop.*' 2>/dev/null || true)
+[ -n "$icons" ] || { printf 'No Claude icon found in the package\n' >&2; exit 1; }
+while IFS= read -r icon; do
+  ln -sfn "${icon##*/}" "${icon%/*}/com.anthropic.Claude.${icon##*.}"
+done <<<"$icons"
+ln -sfn claude-desktop.png "$tmp/stage/usr/share/pixmaps/com.anthropic.Claude.png" 2>/dev/null || true
 install -Dm644 "$tmp/stage/usr/share/doc/claude-desktop/copyright" \
   "$tmp/stage/usr/share/licenses/claude-desktop/copyright"
 rm -rf -- "$tmp/stage/usr/share/lintian"

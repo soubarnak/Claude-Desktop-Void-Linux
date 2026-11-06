@@ -64,7 +64,8 @@ with tempfile.TemporaryDirectory(prefix="claude-void-cowork-") as temporary:
             time.sleep(0.05)
         rpc("configure", {"userDataName": "ClaudeVoidVerification", "memoryMB": 2048,
                           "cpuCount": 2, "smolBinPath": str(resources / "smol-bin.x64.img"),
-                          "logDir": str(report_dir), "virtiofsdPath": "/usr/libexec/virtiofsd",
+                          "logDir": str(report_dir), "qemuPath": "/usr/bin/qemu-system-x86_64",
+                          "virtiofsdPath": "/usr/libexec/virtiofsd",
                           "firmwareCodePath": "/usr/share/OVMF/OVMF_CODE_4M.fd",
                           "firmwareVarsTemplatePath": "/usr/share/OVMF/OVMF_VARS_4M.fd"})
         print("PASS: helper configure accepted Void firmware and virtiofsd", flush=True)

@@ -77,4 +77,4 @@ PASS: Cowork VM running with guest connected
 PASS: command executed inside Cowork guest with exit code 0
 ```
 
-This test passed on Void Linux x86_64 with Claude Desktop 2.26454.2.
+This test passed on Void Linux x86_64 with Claude Desktop 4.23118.0.

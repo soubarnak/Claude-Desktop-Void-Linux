@@ -67,8 +67,8 @@ jobs:
             echo "Badge already shows $VERSION"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "soubarnak"
+          git config user.email "soubarna@live.in"
           git commit -am "chore: tested with Claude Desktop $VERSION"
           git push
 

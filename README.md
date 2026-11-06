@@ -53,7 +53,8 @@ on Void. See [Cowork on Void Linux](docs/cowork.md).
 ## Requirements
 
 - Void Linux, **x86_64 glibc** (Anthropic ships no musl or ARM build for Linux).
-- `sudo` rights, to register the repository and install the package.
+- `sudo` or `doas` rights, to register the repository and install the package.
+  Commands in this README use `sudo`; substitute `doas` if that is what you use.
 - About 1 GB of free disk space for the download, the build, and the package.
 - These tools:
 
@@ -79,7 +80,7 @@ claude-desktop-update           # download, build, register, install
 `--install-command` links the script to `~/.local/bin/claude-desktop-update`.
 If `~/.local/bin` is not in your `PATH`, run `./update.sh` from the clone instead.
 
-The first run asks for your `sudo` password. It writes
+The first run asks for your `sudo` or `doas` password. It writes
 `/etc/xbps.d/30-claude-desktop.conf` with this line:
 
 ```

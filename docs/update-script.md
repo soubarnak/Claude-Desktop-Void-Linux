@@ -15,7 +15,7 @@ claude-desktop-update [options]
 | `-f`, `--force` | Rebuild even if the newest version is already in `repo/`. |
 | `-d`, `--deb FILE` | Use a `.deb` file you downloaded yourself. No download. |
 | `-l`, `--link LINK` | Use this Anthropic link instead of the saved repository. |
-| `-n`, `--no-install` | Build and refresh the repository only. No `sudo`, no install. |
+| `-n`, `--no-install` | Build and refresh the repository only. No root, no install. |
 | `-y`, `--yes` | Pass `-y` to `xbps-install`, so it does not ask for confirmation. |
 | `--no-self-update` | Do not `git pull` the scripts before running. |
 | `--install-command` | Link the script as `~/.local/bin/claude-desktop-update`, then exit. |
@@ -47,14 +47,33 @@ claude-desktop-update -l https://downloads.claude.ai/claude-desktop/apt/stable
    cleans the repository index, and deletes older `.deb` files from
    `downloads/`.
 6. **Registers the repository** in `/etc/xbps.d/30-claude-desktop.conf` if
-   that file is missing or points elsewhere (uses `sudo`).
-7. **Installs or upgrades** with `sudo xbps-install -S claude-desktop` or
-   `sudo xbps-install -Su claude-desktop`. Only `claude-desktop` and its
+   that file is missing or points elsewhere (needs root; see
+   [Root access](#root-access)).
+7. **Installs or upgrades** with `xbps-install -S claude-desktop` or
+   `xbps-install -Su claude-desktop`, as root. Only `claude-desktop` and its
    dependencies change; it does not upgrade the rest of the system.
 8. **Reports** the old and new installed versions. If Claude Desktop is
    running the old version, it tells you to restart it.
 
 Steps 6 to 8 are skipped with `--no-install`.
+
+## Root access
+
+Steps 6 and 7 need root.
+The script uses `sudo` if it is installed, otherwise `doas`.
+Run as root, it uses neither.
+Set `CLAUDE_VOID_SU` to choose explicitly:
+
+```sh
+CLAUDE_VOID_SU=doas claude-desktop-update
+```
+
+With `doas`, step 6 and step 7 are separate calls, so without `persist` you are asked for your password twice.
+A rule such as this in `/etc/doas.conf` avoids that:
+
+```
+permit persist :wheel
+```
 
 ## Sources
 
@@ -135,7 +154,7 @@ All but the last two live in the clone and are ignored by git.
 
 The [README](../README.md#update) shows a cron job that runs the script with
 `--no-install` every 6 hours. New releases then reach your system with a
-normal `sudo xbps-install -Syu`. The log is in
+normal `xbps-install -Syu` as root. The log is in
 `~/.cache/claude-desktop-update.log`.
 
 ## build-xbps.sh
